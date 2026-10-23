@@ -2,7 +2,7 @@ namespace VendorFunding.Core;
 
 /// <summary>
 /// Groups unpaid claims by how long they have been outstanding, the same way an
-/// accounts receivable aging report does. The SQL report in db/queries.sql does
+/// accounts receivable aging report does. The SQL report in db/03_reports.sql does
 /// this in the database; this version exists so the rule is unit tested.
 /// </summary>
 public static class ClaimAging
