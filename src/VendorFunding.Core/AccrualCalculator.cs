@@ -42,9 +42,11 @@ public static class AccrualCalculator
         earned = RoundToCents(earned);
 
         var capApplied = false;
+        // Round the cap too: it comes from a DECIMAL(19,4) column, and an amount
+        // owed should always be whole cents (40.00, not 40.0000).
         if (agreement.MaxPayout is decimal cap && earned > cap)
         {
-            earned = cap;
+            earned = RoundToCents(cap);
             capApplied = true;
         }
 

@@ -74,6 +74,18 @@ public class AccrualCalculatorTests
     }
 
     [Fact]
+    public void Capped_amount_is_whole_cents_even_when_the_cap_has_four_decimal_places()
+    {
+        // SQL Server returns the cap as DECIMAL(19,4): 40.0000, or 40.0050 for an odd contract value.
+        var activity = new[] { Day(3, 5, sold: 200) };
+
+        var result = AccrualCalculator.CalculateEarned(
+            Agreement(FundingType.ScanBased, rate: 0.25m, cap: 40.0050m), activity, March31);
+
+        Assert.Equal("40.01", result.Earned.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    [Fact]
     public void Nothing_is_earned_before_the_agreement_starts()
     {
         var result = AccrualCalculator.CalculateEarned(
