@@ -36,6 +36,12 @@ public static class AccrualCalculator
 
             FundingType.LumpSum => LumpSumEarned(agreement, lastCountedDay),
 
+            // Percent off the cost of each unit bought. Rounded once on the total,
+            // not per row, so many small rows cannot drift by a penny each.
+            FundingType.OffInvoice => agreement.PercentOff / 100m * activity
+                .Where(a => InRange(a.ActivityDate, agreement.StartDate, lastCountedDay))
+                .Sum(a => a.UnitsPurchased * a.UnitCost),
+
             _ => throw new NotSupportedException($"Unknown funding type {agreement.Type}."),
         };
 

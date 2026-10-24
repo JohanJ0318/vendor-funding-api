@@ -8,11 +8,11 @@ public class AccrualCalculatorTests
     private static readonly DateOnly March31 = new(2026, 3, 31);
 
     private static FundingAgreement Agreement(
-        FundingType type, decimal rate = 0m, decimal lumpSum = 0m, decimal? cap = null) =>
-        new(1, 1, "test", type, March1, March31, rate, lumpSum, cap);
+        FundingType type, decimal rate = 0m, decimal lumpSum = 0m, decimal? cap = null, decimal percentOff = 0m) =>
+        new(1, 1, "test", type, March1, March31, rate, lumpSum, cap, percentOff);
 
-    private static ItemActivity Day(int month, int day, int purchased = 0, int sold = 0) =>
-        new(new DateOnly(2026, month, day), "ITEM", purchased, sold);
+    private static ItemActivity Day(int month, int day, int purchased = 0, int sold = 0, decimal cost = 0m) =>
+        new(new DateOnly(2026, month, day), "ITEM", purchased, sold, cost);
 
     [Fact]
     public void Billback_pays_on_units_purchased_inside_the_window_only()
@@ -48,6 +48,64 @@ public class AccrualCalculatorTests
         var result = AccrualCalculator.CalculateEarned(Agreement(FundingType.ScanBased, rate: 0.25m), activity, March31);
 
         Assert.Equal(40.00m, result.Earned);    // 160 units x $0.25
+    }
+
+    [Fact]
+    public void Off_invoice_pays_a_percent_of_cost_on_units_purchased_inside_the_window_only()
+    {
+        var activity = new[]
+        {
+            Day(2, 28, purchased: 999, cost: 3.49m),            // day before the window
+            Day(3, 3, purchased: 100, cost: 3.49m),             // $349.00 of cost
+            Day(3, 17, purchased: 50, sold: 500, cost: 3.59m),  // $179.50 of cost; units sold do not count
+            Day(4, 1, purchased: 500, cost: 3.59m),             // day after the window
+        };
+
+        var result = AccrualCalculator.CalculateEarned(
+            Agreement(FundingType.OffInvoice, percentOff: 10m), activity, March31);
+
+        Assert.Equal(52.85m, result.Earned);    // 10% of $528.50
+        Assert.False(result.CapApplied);
+    }
+
+    [Fact]
+    public void Off_invoice_half_cent_rounds_away_from_zero()
+    {
+        // 10% of $0.45 is $0.045: half away from zero gives $0.05, banker's rounding would give $0.04.
+        var result = AccrualCalculator.CalculateEarned(
+            Agreement(FundingType.OffInvoice, percentOff: 10m), new[] { Day(3, 5, purchased: 1, cost: 0.45m) }, March31);
+
+        Assert.Equal(0.05m, result.Earned);
+    }
+
+    [Fact]
+    public void Off_invoice_rounds_the_total_once_not_each_row()
+    {
+        // Three rows of 10% x $0.15 = $0.015 each. Rounding per row would give 3 x $0.02 = $0.06;
+        // the true total is $0.045, which rounds to $0.05.
+        var activity = new[]
+        {
+            Day(3, 2, purchased: 1, cost: 0.15m),
+            Day(3, 3, purchased: 1, cost: 0.15m),
+            Day(3, 4, purchased: 1, cost: 0.15m),
+        };
+
+        var result = AccrualCalculator.CalculateEarned(
+            Agreement(FundingType.OffInvoice, percentOff: 10m), activity, March31);
+
+        Assert.Equal(0.05m, result.Earned);
+    }
+
+    [Fact]
+    public void Off_invoice_respects_the_cap()
+    {
+        var activity = new[] { Day(3, 3, purchased: 100, cost: 3.49m) };   // $34.90 earned before the cap
+
+        var result = AccrualCalculator.CalculateEarned(
+            Agreement(FundingType.OffInvoice, percentOff: 10m, cap: 25m), activity, March31);
+
+        Assert.Equal(25m, result.Earned);
+        Assert.True(result.CapApplied);
     }
 
     [Fact]

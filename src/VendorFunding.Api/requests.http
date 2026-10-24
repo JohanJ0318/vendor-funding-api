@@ -21,6 +21,10 @@ GET {{host}}/agreements/2/accrual?asOf=2026-03-31
 GET {{host}}/agreements/3/accrual?asOf=2026-03-10
 
 ###
+# Off-invoice: 10% off $528.50 of juice bought in March = $52.85
+GET {{host}}/agreements/4/accrual?asOf=2026-03-31
+
+###
 GET {{host}}/agreements/1/claims
 
 ###

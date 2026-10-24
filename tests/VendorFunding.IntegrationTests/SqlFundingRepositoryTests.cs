@@ -68,6 +68,22 @@ public class SqlFundingRepositoryTests
     }
 
     [Fact]
+    public async Task Seeded_off_invoice_accrues_to_52_85_end_to_end()
+    {
+        var repo = Repo();
+        var agreement = (await repo.GetAgreementAsync(4))!;
+        var activity = await repo.GetActivityAsync(4, agreement.StartDate, agreement.EndDate);
+
+        var result = AccrualCalculator.CalculateEarned(agreement, activity, agreement.EndDate);
+
+        Assert.Equal(FundingType.OffInvoice, agreement.Type);
+        Assert.Equal(10m, agreement.PercentOff);
+        Assert.Equal(2, activity.Count);                    // the April 2 row is excluded
+        Assert.Equal(3.59m, activity[1].UnitCost);
+        Assert.Equal(52.85m, result.Earned);                // 10% of $528.50
+    }
+
+    [Fact]
     public async Task Sql_aging_report_matches_the_csharp_rule()
     {
         var asOf = new DateOnly(2026, 6, 30);

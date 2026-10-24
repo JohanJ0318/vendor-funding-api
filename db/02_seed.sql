@@ -10,21 +10,26 @@ INSERT INTO dbo.Vendor (VendorNumber, Name) VALUES
 -- 1: billback, $0.50 per unit purchased, March 2026
 -- 2: scan-based, $0.25 per unit sold, March 2026, capped at $40
 -- 3: lump sum, $3,100 end-cap display fee, March 2026 (31 days -> $100/day)
+-- 4: off-invoice, 10% off the unit cost of juice purchased in March 2026
 INSERT INTO dbo.FundingAgreement
-    (VendorId, Description, FundingType, StartDate, EndDate, RatePerUnit, LumpSumAmount, MaxPayout)
+    (VendorId, Description, FundingType, StartDate, EndDate, RatePerUnit, LumpSumAmount, MaxPayout, PercentOff)
 VALUES
-    (1, N'Spring milk billback',      1, '2026-03-01', '2026-03-31', 0.50, 0,    NULL),
-    (2, N'Chips scan-down promotion', 2, '2026-03-01', '2026-03-31', 0.25, 0,    40.00),
-    (3, N'End-cap display fee',       3, '2026-03-01', '2026-03-31', 0,    3100, NULL);
+    (1, N'Spring milk billback',        1, '2026-03-01', '2026-03-31', 0.50, 0,    NULL,  0),
+    (2, N'Chips scan-down promotion',   2, '2026-03-01', '2026-03-31', 0.25, 0,    40.00, 0),
+    (3, N'End-cap display fee',         3, '2026-03-01', '2026-03-31', 0,    3100, NULL,  0),
+    (3, N'Juice off-invoice allowance', 4, '2026-03-01', '2026-03-31', 0,    0,    NULL,  10);
 
-INSERT INTO dbo.ItemActivity (AgreementId, ActivityDate, ItemNumber, UnitsPurchased, UnitsSold) VALUES
-    (1, '2026-02-28', 'MILK-GAL', 999, 0),   -- before the window: must not count
-    (1, '2026-03-02', 'MILK-GAL', 120, 0),
-    (1, '2026-03-09', 'MILK-GAL',  80, 0),
-    (1, '2026-03-16', 'MILK-HG',   60, 0),
-    (2, '2026-03-05', 'CHIP-REG',   0, 90),
-    (2, '2026-03-12', 'CHIP-REG',   0, 70),  -- 160 sold x $0.25 = $40, right at the cap
-    (2, '2026-03-20', 'CHIP-BBQ',   0, 40);  -- pushes past the cap
+INSERT INTO dbo.ItemActivity (AgreementId, ActivityDate, ItemNumber, UnitsPurchased, UnitsSold, UnitCost) VALUES
+    (1, '2026-02-28', 'MILK-GAL', 999, 0, 0),   -- before the window: must not count
+    (1, '2026-03-02', 'MILK-GAL', 120, 0, 0),
+    (1, '2026-03-09', 'MILK-GAL',  80, 0, 0),
+    (1, '2026-03-16', 'MILK-HG',   60, 0, 0),
+    (2, '2026-03-05', 'CHIP-REG',   0, 90, 0),
+    (2, '2026-03-12', 'CHIP-REG',   0, 70, 0),  -- 160 sold x $0.25 = $40, right at the cap
+    (2, '2026-03-20', 'CHIP-BBQ',   0, 40, 0),  -- pushes past the cap
+    (4, '2026-03-03', 'OJ-64OZ',  100, 0, 3.49), -- $349.00 of cost
+    (4, '2026-03-17', 'OJ-64OZ',   50, 0, 3.59), -- $179.50 of cost: 10% of $528.50 = $52.85
+    (4, '2026-04-02', 'OJ-64OZ',  500, 0, 3.59); -- after the window: must not count
 
 -- Claims in different aging buckets as of 2026-06-30.
 INSERT INTO dbo.Claim (AgreementId, PeriodStart, PeriodEnd, AmountBilled, AmountCollected, BilledDate) VALUES

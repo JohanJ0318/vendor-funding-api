@@ -11,6 +11,7 @@ Built to learn .NET, C# and SQL Server in a finance setting, using AI-assisted d
 | Billback | A rate per unit the retailer **buys** during the window | 260 gallons of milk x $0.50 = $130.00 |
 | Scan-based | A rate per unit the retailer **sells** during the window | 200 bags x $0.25 = $50.00, capped at $40.00 |
 | Lump sum | A fixed fee, earned evenly per day across the window | $3,100 display fee, $100 per day |
+| Off-invoice | A percent off the unit cost of each unit the retailer **buys** during the window | 10% off $528.50 of juice purchases = $52.85 |
 
 Rules the code enforces, each covered by a test:
 

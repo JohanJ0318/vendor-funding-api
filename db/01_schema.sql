@@ -26,13 +26,15 @@ CREATE TABLE dbo.FundingAgreement
     AgreementId   INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_FundingAgreement PRIMARY KEY,
     VendorId      INT               NOT NULL CONSTRAINT FK_Agreement_Vendor REFERENCES dbo.Vendor(VendorId),
     Description   NVARCHAR(200)     NOT NULL,
-    FundingType   TINYINT           NOT NULL,          -- 1 Billback, 2 ScanBased, 3 LumpSum
+    FundingType   TINYINT           NOT NULL,          -- 1 Billback, 2 ScanBased, 3 LumpSum, 4 OffInvoice
     StartDate     DATE              NOT NULL,
     EndDate       DATE              NOT NULL,
     RatePerUnit   DECIMAL(19,4)     NOT NULL CONSTRAINT DF_Agreement_Rate DEFAULT 0,
     LumpSumAmount DECIMAL(19,4)     NOT NULL CONSTRAINT DF_Agreement_Lump DEFAULT 0,
     MaxPayout     DECIMAL(19,4)     NULL,
-    CONSTRAINT CK_Agreement_Type  CHECK (FundingType IN (1, 2, 3)),
+    PercentOff    DECIMAL(9,4)      NOT NULL CONSTRAINT DF_Agreement_Percent DEFAULT 0,  -- 10 = 10% off unit cost
+    CONSTRAINT CK_Agreement_Type    CHECK (FundingType IN (1, 2, 3, 4)),
+    CONSTRAINT CK_Agreement_Percent CHECK (PercentOff BETWEEN 0 AND 100),
     CONSTRAINT CK_Agreement_Dates CHECK (EndDate >= StartDate)
 );
 
@@ -43,6 +45,7 @@ CREATE TABLE dbo.ItemActivity
     ItemNumber     VARCHAR(20) NOT NULL,
     UnitsPurchased INT         NOT NULL CONSTRAINT DF_Activity_Purchased DEFAULT 0,
     UnitsSold      INT         NOT NULL CONSTRAINT DF_Activity_Sold DEFAULT 0,
+    UnitCost       DECIMAL(19,4) NOT NULL CONSTRAINT DF_Activity_Cost DEFAULT 0,
     CONSTRAINT PK_ItemActivity PRIMARY KEY (AgreementId, ActivityDate, ItemNumber)
 );
 

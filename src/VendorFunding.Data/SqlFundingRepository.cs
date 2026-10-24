@@ -37,7 +37,7 @@ public sealed class SqlFundingRepository : IFundingRepository
     {
         const string sql = """
             SELECT AgreementId, VendorId, Description, FundingType, StartDate, EndDate,
-                   RatePerUnit, LumpSumAmount, MaxPayout
+                   RatePerUnit, LumpSumAmount, MaxPayout, PercentOff
             FROM dbo.FundingAgreement
             WHERE AgreementId = @AgreementId;
             """;
@@ -59,14 +59,15 @@ public sealed class SqlFundingRepository : IFundingRepository
             EndDate: DateOnly.FromDateTime(reader.GetDateTime(5)),
             RatePerUnit: reader.GetDecimal(6),
             LumpSumAmount: reader.GetDecimal(7),
-            MaxPayout: reader.IsDBNull(8) ? null : reader.GetDecimal(8));
+            MaxPayout: reader.IsDBNull(8) ? null : reader.GetDecimal(8),
+            PercentOff: reader.GetDecimal(9));
     }
 
     public async Task<IReadOnlyList<ItemActivity>> GetActivityAsync(
         int agreementId, DateOnly from, DateOnly to, CancellationToken ct = default)
     {
         const string sql = """
-            SELECT ActivityDate, ItemNumber, UnitsPurchased, UnitsSold
+            SELECT ActivityDate, ItemNumber, UnitsPurchased, UnitsSold, UnitCost
             FROM dbo.ItemActivity
             WHERE AgreementId = @AgreementId
               AND ActivityDate BETWEEN @From AND @To
@@ -87,7 +88,8 @@ public sealed class SqlFundingRepository : IFundingRepository
                 DateOnly.FromDateTime(reader.GetDateTime(0)),
                 reader.GetString(1),
                 reader.GetInt32(2),
-                reader.GetInt32(3)));
+                reader.GetInt32(3),
+                reader.GetDecimal(4)));
         }
         return rows;
     }
